@@ -1,0 +1,25 @@
+{
+  "name": "@local/dsh-jev-planning",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Staged planning through the Jev judge: requirements, outline, detail and final plan review, with a gate that holds consequential changes until the plan artifact's exact bytes are approved.",
+  "exports": {
+    ".": "./index.js",
+    "./locale/*.json": "./locale/*.json",
+    "./icon": "./icon.svg"
+  },
+  "files": [
+    "index.js",
+    "cordis.patch.yml",
+    "locale/*.json",
+    "docs",
+    "README.md",
+    "icon.svg"
+  ],
+  "dsh": {
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    }
+  }
+}

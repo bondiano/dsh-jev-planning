@@ -1,0 +1,9 @@
+# Jev planning bundle: one Host row that registers the three jev_* tools, the
+# mutation gate, the guidance prompt section and the /jev status command.
+# planDir is workspace-relative; plan artifacts are Markdown files there.
+- insert:
+    - id: jev-planning
+      name: '@local/dsh-jev-planning'
+      config:
+        planDir: .dsh/jev
+        gateMutation: true
