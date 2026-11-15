@@ -430,12 +430,24 @@ function gitIsReadOnly(args) {
 /** The provider chain, in the order Jevstice tries it. */
 const JUDGE_SOURCES = Object.freeze([
   {
+    name: 'OpenCode Go',
+    // A Go key is not a free-tier key: jev-1.13-free is refused for it, and the
+    // Go host does not include jev-1.13. The paid model is served on the
+    // pay-as-you-go System One endpoint and bills the Go workspace.
+    endpoint: 'https://opencode.ai/inference/systemone/v1/systemone',
+    model: 'jev-1.13',
+    sessionHeader: true,
+    keyEnv: 'OPENCODE_GO_API_KEY',
+    commandEnv: 'OPENCODE_GO_API_KEY_COMMAND',
+    credentialRefs: ['OPENCODE_GO_API_KEY'],
+  },
+  {
     name: 'OpenCode',
     endpoint: 'https://opencode.ai/inference/systemone/v1/systemone',
     model: 'jev-1.13-free',
     keyEnv: 'OPENCODE_API_KEY',
     commandEnv: 'OPENCODE_API_KEY_COMMAND',
-    credentialRefs: ['OPENCODE_API_KEY', 'OPENCODE_GO_API_KEY'],
+    credentialRefs: ['OPENCODE_API_KEY'],
   },
   {
     name: 'OpenRouter',
@@ -640,9 +652,12 @@ async function postSystemOne(source, key, state, questions) {
   const controller = new AbortController()
   const timeout = setTimeout(() => controller.abort(), LIMITS.requestTimeoutMs)
   try {
+    const headers = { Authorization: `Bearer ${key}`, 'Content-Type': 'application/json' }
+    // Go rejects a request that cannot be attributed to a conversation.
+    if (source.sessionHeader === true) headers['x-opencode-session'] = source.sessionId
     const response = await fetch(source.endpoint, {
       method: 'POST',
-      headers: { Authorization: `Bearer ${key}`, 'Content-Type': 'application/json' },
+      headers,
       body: JSON.stringify({ state, questions: buildQuestions(questions), model: source.model }),
       signal: controller.signal,
     })
@@ -1061,7 +1076,7 @@ function unavailableText(outcome, state) {
   const note = state.judgeUnavailable
     ? ' Three consecutive availability failures permit unjudged continuation, which is not an approval: the mutation gate is open until the next planning call.'
     : ` Availability failures: ${state.judgeFailures}/${LIMITS.maxJudgeFailures}.`
-  return `The judge is unavailable and this is not an approval: ${outcome.problem}.${note} Configure OPENCODE_API_KEY, OPENROUTER_API_KEY or TYPESAFE_API_KEY, the matching _API_KEY_COMMAND, or the same name in the DSH credential store to judge planning.`
+  return `The judge is unavailable and this is not an approval: ${outcome.problem}.${note} Configure OPENCODE_GO_API_KEY, OPENCODE_API_KEY, OPENROUTER_API_KEY or TYPESAFE_API_KEY, the matching _API_KEY_COMMAND, or the same name in the DSH credential store to judge planning.`
 }
 
 /**
@@ -1542,11 +1557,13 @@ export function apply(ctx, config = {}) {
   const resolved = resolveConfig(config)
   const states = new Map()
   const credentials = ctx.get?.('credentials')
+  const sessionId = globalThis.crypto?.randomUUID?.() ?? `jev-${Date.now()}`
   const sources = JUDGE_SOURCES.map(source => ({
     ...source,
     endpoint: source.baseUrlEnv !== undefined
       ? `${(process.env[source.baseUrlEnv]?.trim() || 'https://api.typesafe.ai').replace(/\/+$/, '')}/v1/systemone`
       : source.endpoint,
+    sessionId,
     resolveKey: makeResolver(source, credentials),
   }))
 

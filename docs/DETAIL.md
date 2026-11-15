@@ -25,7 +25,7 @@ Once a final plan is approved, the artifact is re-read before each consequential
 
 ## Provider keys
 
-The judge is reached through the provider chain the Jevstice extension uses: OpenCode first, OpenRouter second, TypeSafe last. Each provider looks for its key in the Host process environment, then in the resolver command variable, then in the DeepSeek Harness credential store under the same reference name; the OpenCode step also accepts the `OPENCODE_GO_API_KEY` reference that the subscription provider stores. A provider without a key is skipped without a call. Keys are never logged and never written to disk by this plugin, and a stored credential is re-read on each call.
+The judge is reached through the provider chain the Jevstice extension uses: OpenCode Go first, OpenCode second, OpenRouter third, TypeSafe last. Each provider looks for its key in the Host process environment, then in the resolver command variable, then in the DeepSeek Harness credential store under the same reference name. A Go subscription key (`OPENCODE_GO_API_KEY`) calls `jev-1.13` on the System One endpoint; the free model is reserved for a pay-as-you-go `OPENCODE_API_KEY`, because a Go key is refused on `jev-1.13-free`. A provider without a key is skipped without a call. Keys are never logged and never written to disk by this plugin, and a stored credential is re-read on each call.
 
 When no provider answers, the tool reports unavailability and the submission is not an approval. After three consecutive availability failures the gate opens as unjudged continuation until the next planning call, so a session without any credential can still work; the tool text says so explicitly.
 
