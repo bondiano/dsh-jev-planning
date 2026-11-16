@@ -21,5 +21,13 @@
     "bundle": {
       "patch": "./cordis.patch.yml"
     }
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/bondiano/dsh-jev-planning.git"
+  },
+  "homepage": "https://github.com/bondiano/dsh-jev-planning#readme",
+  "bugs": {
+    "url": "https://github.com/bondiano/dsh-jev-planning/issues"
   }
 }
