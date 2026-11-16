@@ -499,10 +499,12 @@ async function resolveKey(source, env) {
  * memoized, while the DSH credential store is re-read on every call because a
  * stored credential may change without a restart.
  * @param source - the provider entry.
- * @param credentials - the optional DSH credential service.
+ * @param credentialsOf - reads the optional DSH credential service at call
+ * time. A plugin may be applied before the credentials provider registers, so
+ * a value captured once at apply time can stay undefined for the whole process.
  * @returns a resolver.
  */
-function makeResolver(source, credentials) {
+function makeResolver(source, credentialsOf) {
   let pending
   const fromEnvironment = () => {
     if (pending === undefined) {
@@ -522,11 +524,20 @@ function makeResolver(source, credentials) {
   return async () => {
     const environmentKey = await fromEnvironment()
     if (environmentKey !== undefined) return environmentKey
+    const credentials = credentialsOf()
+    source.credentialCheck = {
+      service: credentials === undefined ? 'unavailable' : 'available',
+      refs: [...(source.credentialRefs ?? [])],
+      resolved: 0,
+    }
     for (const ref of source.credentialRefs ?? []) {
       try {
         const resolved = await credentials?.resolve?.(ref)
         const value = typeof resolved?.value === 'string' ? resolved.value.trim() : ''
-        if (value.length > 0) return value
+        if (value.length > 0) {
+          source.credentialCheck.resolved += 1
+          return value
+        }
       } catch {
         // A failing reference falls through to the next source, never to an approval.
       }
@@ -811,6 +822,23 @@ function material(state, fields, evidence) {
 }
 
 /**
+ * Describe what the credential lookup saw, so a missing key is diagnosable from
+ * the judge's own refusal text instead of requiring a restart and a debugger.
+ * @param sources - provider chain after the key lookup ran.
+ * @returns a trailing clause for the missing-key problem, or an empty string.
+ */
+function credentialDiagnosis(sources) {
+  const checks = sources
+    .filter(source => source.credentialCheck !== undefined)
+    .map(source => {
+      const check = source.credentialCheck
+      const refs = check.refs.length === 0 ? 'no credential refs' : check.refs.join(', ')
+      return `${source.name}: credential store ${check.service}, tried ${refs}`
+    })
+  return checks.length === 0 ? '' : `; ${checks.join('; ')}`
+}
+
+/**
  * One judge call with its availability record folded in: a usable answer clears
  * the count, an availability failure counts towards the declared unavailability,
  * and a malformed answer does neither.
@@ -849,7 +877,7 @@ async function askJudge(sources, state, judged, questions) {
   const outcome = unavailable ?? unusableOutcome ?? {
     ok: false,
     kind: 'unavailable',
-    problem: `no judge source has a key (${sources.map(source => source.keyEnv).join(', ')})`,
+    problem: `no judge source has a key (${sources.map(source => source.keyEnv).join(', ')})${credentialDiagnosis(sources)}`,
   }
   if (outcome.kind === 'unavailable') {
     state.judgeFailures += 1
@@ -1556,7 +1584,7 @@ function resolveConfig(config) {
 export function apply(ctx, config = {}) {
   const resolved = resolveConfig(config)
   const states = new Map()
-  const credentials = ctx.get?.('credentials')
+  const credentialsOf = () => ctx.get?.('credentials')
   const sessionId = globalThis.crypto?.randomUUID?.() ?? `jev-${Date.now()}`
   const sources = JUDGE_SOURCES.map(source => ({
     ...source,
@@ -1564,7 +1592,7 @@ export function apply(ctx, config = {}) {
       ? `${(process.env[source.baseUrlEnv]?.trim() || 'https://api.typesafe.ai').replace(/\/+$/, '')}/v1/systemone`
       : source.endpoint,
     sessionId,
-    resolveKey: makeResolver(source, credentials),
+    resolveKey: makeResolver(source, credentialsOf),
   }))
 
   /**
