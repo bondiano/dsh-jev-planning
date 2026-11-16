@@ -22,9 +22,10 @@ Plan artifacts are Markdown files under the row's `planDir`, `.dsh/jev` by defau
 
 The judge is called in the Jevstice order, and the first usable answer wins:
 
-1. OpenCode — `OPENCODE_API_KEY` or `OPENCODE_API_KEY_COMMAND`, then the `OPENCODE_API_KEY` or `OPENCODE_GO_API_KEY` reference in the DSH credential store
-2. OpenRouter — `OPENROUTER_API_KEY` or `OPENROUTER_API_KEY_COMMAND`, then the `OPENROUTER_API_KEY` reference
-3. TypeSafe — `TYPESAFE_API_KEY` or `TYPESAFE_API_KEY_COMMAND`, then the `TYPESAFE_API_KEY` reference (`TYPESAFE_BASE_URL` overrides the host)
+1. OpenCode Go — `OPENCODE_GO_API_KEY` or `OPENCODE_GO_API_KEY_COMMAND`, then the `OPENCODE_GO_API_KEY` reference in the DSH credential store. A Go subscription uses `jev-1.13`, not `jev-1.13-free`.
+2. OpenCode — `OPENCODE_API_KEY` or `OPENCODE_API_KEY_COMMAND`, then the `OPENCODE_API_KEY` reference, which still uses the free model
+3. OpenRouter — `OPENROUTER_API_KEY` or `OPENROUTER_API_KEY_COMMAND`, then the `OPENROUTER_API_KEY` reference
+4. TypeSafe — `TYPESAFE_API_KEY` or `TYPESAFE_API_KEY_COMMAND`, then the `TYPESAFE_API_KEY` reference (`TYPESAFE_BASE_URL` overrides the host)
 
 A provider without a key is skipped without a call. Keys are read from the Host process environment or the DSH credential store, never logged, and never stored by this plugin; a stored credential is re-read on each call, so changing it reaches the next attempt without a restart. Three consecutive availability failures are reported as unjudged continuation, which is not an approval: the gate opens until the next planning call rather than deadlocking a session without credentials.
 
