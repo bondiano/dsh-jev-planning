@@ -5,12 +5,17 @@
   "type": "module",
   "description": "Staged planning through the Jev judge: requirements, outline, detail and final plan review, with a gate that holds consequential changes until the plan artifact's exact bytes are approved.",
   "exports": {
-    ".": "./index.js",
+    ".": {
+      "types": "./index.ts",
+      "default": "./dist/index.js"
+    },
     "./locale/*.json": "./locale/*.json",
     "./icon": "./icon.svg"
   },
   "files": [
-    "index.js",
+    "dist/**/*.js",
+    "!dist/test/",
+    "index.ts",
     "cordis.patch.yml",
     "locale/*.json",
     "docs",
@@ -22,6 +27,15 @@
       "patch": "./cordis.patch.yml"
     }
   },
+  "scripts": {
+    "build": "tsc",
+    "typecheck": "tsc --noEmit",
+    "test": "npm run build && node --test dist/test/*.test.js",
+    "check": "npm run typecheck && npm test"
+  },
+  "dependencies": {
+    "xstate": "5.33.4"
+  },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/bondiano/dsh-jev-planning.git"
@@ -29,5 +43,9 @@
   "homepage": "https://github.com/bondiano/dsh-jev-planning#readme",
   "bugs": {
     "url": "https://github.com/bondiano/dsh-jev-planning/issues"
+  },
+  "devDependencies": {
+    "@types/node": "22.18.6",
+    "typescript": "7.0.2"
   }
 }

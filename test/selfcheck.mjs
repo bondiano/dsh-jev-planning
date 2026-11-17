@@ -48,7 +48,7 @@ delete process.env.OPENCODE_API_KEY_COMMAND
 delete process.env.OPENROUTER_API_KEY_COMMAND
 delete process.env.TYPESAFE_API_KEY_COMMAND
 
-const { apply, __test } = await import('../index.js')
+const { apply, __test } = await import('../dist/index.js')
 
 /** One recorded registration. */
 const registered = []
