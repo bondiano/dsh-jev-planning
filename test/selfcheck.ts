@@ -12,8 +12,8 @@ import { createServer } from 'node:http'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 
-const failures = []
-const checks = []
+const failures: string[] = []
+const checks: string[] = []
 const cwd = await mkdtemp(join(tmpdir(), 'jev-selfcheck-'))
 const planDir = 'plan'
 const planPath = `${planDir}/feature.md`
@@ -24,9 +24,9 @@ const server = createServer((request, response) => {
   let body = ''
   request.on('data', chunk => { body += chunk })
   request.on('end', () => {
-    const payload = JSON.parse(body)
+    const payload: any = JSON.parse(body)
     const answers = {}
-    for (const [name, question] of Object.entries(payload.questions)) {
+    for (const [name, question] of Object.entries(payload.questions) as [string, any][]) {
       if (question.type === 'noul') answers[name] = { type: 'noul', noul: 0.9 }
       else if (question.type === 'choice') answers[name] = { type: 'choice', choice: Object.keys(question.criteria)[0], confidence: 0.9 }
       else answers[name] = { type: 'score', score: 0, confidence: 0.9 }
@@ -35,8 +35,8 @@ const server = createServer((request, response) => {
     response.end(JSON.stringify({ model: 'stub-jev', answers }))
   })
 })
-await new Promise(resolve => server.listen(0, '127.0.0.1', resolve))
-const port = server.address().port
+await new Promise<void>(resolve => server.listen(0, '127.0.0.1', () => resolve()))
+const port = (server.address() as { port: number }).port
 process.env.TYPESAFE_BASE_URL = `http://127.0.0.1:${port}`
 // The key comes from the DSH credential store, not the environment, so the
 // provider chain's credential fallback is exercised end to end.
@@ -51,7 +51,7 @@ delete process.env.TYPESAFE_API_KEY_COMMAND
 const { apply, __test } = await import('../dist/index.js')
 
 /** One recorded registration. */
-const registered = []
+const registered: any[] = []
 const ctx = {
   effect: (fn) => { fn(); return () => {} },
   tools: {
@@ -88,7 +88,7 @@ const run = async (name, args) => {
  * @param condition - the observed truth.
  * @param detail - observed value printed on failure.
  */
-function check(label, condition, detail = '') {
+function check(label: string, condition: unknown, detail = '') {
   checks.push(label)
   if (!condition) failures.push(`${label}${detail === '' ? '' : ` — ${detail}`}`)
 }
@@ -203,7 +203,7 @@ const consult = await run('jev_consult', {
 check('consult returns the selected alternative', consult.includes('consult (choice): map'), consult)
 
 // Status report -----------------------------------------------------------------
-const status = registered.find(entry => entry.kind === 'command').definition.handler({ rawInput: 'status', agent })
+const status = registered.find(entry => entry.kind === 'command')!.definition.handler({ rawInput: 'status', agent })
 check('status reports the stage', status.kind === 'success' && status.text.includes('stage:'), JSON.stringify(status))
 check('status reports the refused boundary', status.text.includes('refusals'), status.text)
 
