@@ -1,0 +1,48 @@
+direction: down
+
+dsh_agent: "DSH agent\n[tool caller]"
+
+jev_host: "jev-planning host\n[Cordis, Node.js]"
+
+jev_tools: "jev_ tools\n[requirements, plan, consult]"
+
+mutation_gate: "tools/pre-execute gate\n[heldByGate]"
+
+jev_command: "/jev status command\n[commands registry]"
+
+guidance_prompt: "jev:planning-protocol\n[systemPrompt section]"
+
+dag_plan_machine: "plan-review.machine\n[xstate stages]"
+
+judge_transport: "judge provider chain\n[OpenCode, OpenRouter, TypeSafe]"
+
+ex_opencode: "opencode.ai\n[systemone judge]"
+
+ex_openrouter: "openrouter.ai\n[alpha decisions]"
+
+ex_typesafe: "api.typesafe.ai\n[systemone judge]"
+
+db_plan_artifact: ".dsh/jev plan artifact\n[Markdown, hash bound]"
+
+db_credentials: "DSH credential store\n[provider API keys]"
+
+key_resolver_command: "key resolver command\n[execFile /bin/sh]"
+
+dsh_agent -> jev_tools: "calls jev_requirements\njev_plan_review jev_consult"
+dsh_agent -> mutation_gate: "consequential calls\nheld until approval"
+dsh_agent -> db_plan_artifact: "writes plan Markdown\ninside planDir"
+dsh_agent -> jev_command: "runs /jev for local\nstatus report"
+jev_host -> jev_tools: "ctx.tools.register\nthree tools"
+jev_host -> mutation_gate: "ctx.on pre-execute\nregisters gate"
+jev_host -> jev_command: "ctx.get commands\nregisters jev"
+jev_host -> guidance_prompt: "systemPrompt.section\nprotocol text"
+guidance_prompt -> dsh_agent: "planning protocol\nin system prompt"
+jev_tools -> dag_plan_machine: "stage transitions\nnextValue"
+jev_tools -> db_plan_artifact: "reads and hashes\nexact bytes"
+jev_tools -> judge_transport: "submits questions\nnormalized answers"
+mutation_gate -> db_plan_artifact: "re-reads bytes before\nconsequential calls"
+judge_transport -> ex_opencode: "fetch endpoint\nOPENCODE_API_KEY"
+judge_transport -> ex_openrouter: "fetch endpoint\nOPENROUTER_API_KEY"
+judge_transport -> ex_typesafe: "fetch endpoint\nTYPESAFE_API_KEY"
+judge_transport -> db_credentials: "resolves keys by\ncredential refs"
+judge_transport -> key_resolver_command: "runs key resolver\ncommand variable"
