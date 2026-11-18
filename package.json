@@ -1,6 +1,6 @@
 {
   "name": "@local/dsh-jev-planning",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "private": true,
   "type": "module",
   "description": "Staged planning through the Jev judge: requirements, outline, detail and final plan review, with a gate that holds consequential changes until the plan artifact's exact bytes are approved.",
